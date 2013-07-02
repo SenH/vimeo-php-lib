@@ -8,6 +8,8 @@ class phpVimeo
 
     const CACHE_FILE = 'file';
 
+	public $debug = false;
+
     private $_consumer_key = false;
     private $_consumer_secret = false;
     private $_cache_enabled = false;
@@ -129,7 +131,7 @@ class phpVimeo
         if ($this->_cache_enabled == self::CACHE_FILE) {
             $file = $this->_cache_dir.'/'.$hash.'.cache';
             if (file_exists($file)) {
-                return unserialize(file_get_contents($file));
+                return file_get_contents($file);
             }
         }
     }
