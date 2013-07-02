@@ -49,6 +49,7 @@ class phpVimeo
             if (file_exists($file)) {
                 unlink($file);
             }
+			if($this->debug){echo "[CACHE_MISS] Caching response".PHP_EOL;}
             return file_put_contents($file, $response);
         }
     }
@@ -131,6 +132,7 @@ class phpVimeo
         if ($this->_cache_enabled == self::CACHE_FILE) {
             $file = $this->_cache_dir.'/'.$hash.'.cache';
             if (file_exists($file)) {
+				if($this->debug){echo "[CACHE_HIT] Returning cached response".PHP_EOL;}
                 return file_get_contents($file);
             }
         }
