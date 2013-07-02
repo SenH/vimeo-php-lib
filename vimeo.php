@@ -15,6 +15,7 @@ class phpVimeo
     private $_token = false;
     private $_token_secret = false;
     private $_upload_md5s = array();
+	private $_response_headers = array();
 
     public function __construct($consumer_key, $consumer_secret, $token = null, $token_secret = null)
     {
@@ -133,6 +134,39 @@ class phpVimeo
         }
     }
 
+	/**
+	 * Parse HTTP headers
+	 * @param string $raw_headers 
+	 * @param array $headers
+	 */
+	private static function _parseHttpHeaders($raw_headers = null)
+	{
+        $headers = array();
+    
+        foreach (explode("\n", $raw_headers) as $i => $h) {
+            $h = explode(':', $h, 2);
+            
+            if (isset($h[1])) {
+                $headers[$h[0]] = trim($h[1]);
+            }
+        }
+        
+        return $headers;
+	}
+
+	/**
+	 * Split CURL response in headers and body chunk
+	 * @param string $response
+	 * @return object $body
+	 */
+	private function _splitResponse($response = null)
+	{
+		list($headers, $body) = explode("\r\n\r\n", $response, 2);
+		$this->_response_headers = self::_parseHttpHeaders($headers);
+		
+        return unserialize($body);
+	}
+
     /**
      * Call an API method.
      *
@@ -184,7 +218,7 @@ class phpVimeo
 
         // Returned cached value
         if ($this->_cache_enabled && ($cache && $response = $this->_getCached($all_params))) {
-            return $response;
+			return $this->_splitResponse($response);
         }
 
         // Curl options
@@ -199,7 +233,8 @@ class phpVimeo
             $curl_url = $url.'?'.http_build_query($params, '', '&');
             $curl_opts = array(
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 30
+                CURLOPT_TIMEOUT => 30,
+				CURLOPT_HEADER => 1,
             );
         }
         else if (strtoupper($request_method) == 'POST') {
@@ -208,7 +243,8 @@ class phpVimeo
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_TIMEOUT => 30,
                 CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => http_build_query($params, '', '&')
+                CURLOPT_POSTFIELDS => http_build_query($params, '', '&'),
+				CURLOPT_HEADER => 1,
             );
         }
 
@@ -224,24 +260,24 @@ class phpVimeo
         $curl_info = curl_getinfo($curl);
         curl_close($curl);
 
-        // Return
+       // Return
         if (!empty($method)) {
-            $response = unserialize($response);
-            if ($response->stat == 'ok') {
+            $body = $this->_splitResponse($response);
+            if ($body->stat == 'ok') {
  		        // Cache successful response
 		        if ($this->_cache_enabled && $cache) {
 		            $this->_cache($all_params, $response);
 		        }
-                return $response;
+              	return $body;
             }
-            else if ($response->err) {
-                throw new VimeoAPIException($response->err->msg, $response->err->code);
+            else if ($body->err) {
+                throw new VimeoAPIException($body->err->msg, $body->err->code);
             }
 
             return false;
         }
 
-        return $response;
+        return $body;
     }
 
     /**
@@ -322,6 +358,15 @@ class phpVimeo
     {
         return self::API_AUTH_URL."?oauth_token={$token}&permission={$permission}";
     }
+
+	/**
+	 * Return response headers
+	 * @return array response_headers
+	 */
+	public function getResponseHeaders()
+	{
+		return $this->_response_headers;
+	}
 
     /**
      * Get a request token.
@@ -535,7 +580,6 @@ class phpVimeo
             return '';
         }
     }
-
 }
 
 class VimeoAPIException extends Exception {}
