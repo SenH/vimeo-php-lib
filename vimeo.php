@@ -224,15 +224,14 @@ class phpVimeo
         $curl_info = curl_getinfo($curl);
         curl_close($curl);
 
-        // Cache the response
-        if ($this->_cache_enabled && $cache) {
-            $this->_cache($all_params, $response);
-        }
-
         // Return
         if (!empty($method)) {
             $response = unserialize($response);
             if ($response->stat == 'ok') {
+ 		        // Cache successful response
+		        if ($this->_cache_enabled && $cache) {
+		            $this->_cache($all_params, $response);
+		        }
                 return $response;
             }
             else if ($response->err) {
