@@ -9,6 +9,7 @@ class phpVimeo
     const CACHE_FILE = 'file';
 
 	public $debug = false;
+	public $response_is_cached = false;
 
     private $_consumer_key = false;
     private $_consumer_secret = false;
@@ -132,6 +133,7 @@ class phpVimeo
         if ($this->_cache_enabled == self::CACHE_FILE) {
             $file = $this->_cache_dir.'/'.$hash.'.cache';
             if (file_exists($file)) {
+				$this->response_is_cached = true;
 				if($this->debug){echo "[CACHE_HIT] Returning cached response".PHP_EOL;}
                 return file_get_contents($file);
             }
