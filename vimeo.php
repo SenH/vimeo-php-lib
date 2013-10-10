@@ -167,7 +167,13 @@ class phpVimeo
 	 */
 	private function _splitResponse($response = null)
 	{
-		list($headers, $body) = explode("\r\n\r\n", $response, 2);
+		$separator = "\r\n\r\n";
+		
+		if (!strpos($response, $separator)) {
+            throw new VimeoAPIException('HTTP response is malformed.', 999);
+		}
+		
+		list($headers, $body) = explode($separator, $response, 2);
 		$this->_response_headers = self::_parseHttpHeaders($headers);
 		
         return unserialize($body);
@@ -269,8 +275,14 @@ class phpVimeo
        // Return
         if (!empty($method)) {
             $body = $this->_splitResponse($response);
-            if ($body->stat == 'ok') {
- 		        // Cache successful response
+
+			if (!is_object($body) OR !isset($body->stat))
+			{
+                throw new VimeoAPIException('Response body is malformed.', 999);
+			}
+ 
+			if ($body->stat == 'ok') {
+		        // Cache successful response
 		        if ($this->_cache_enabled && $cache) {
 		            $this->_cache($all_params, $response);
 		        }
