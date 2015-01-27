@@ -273,29 +273,32 @@ class phpVimeo
         curl_close($curl);
 
        // Return
-        if (!empty($method)) {
-            $body = $this->_splitResponse($response);
-
-			if (!is_object($body) OR !isset($body->stat))
-			{
-                throw new VimeoAPIException('Response body is malformed.', 999);
-			}
- 
-			if ($body->stat == 'ok') {
-		        // Cache successful response
-		        if ($this->_cache_enabled && $cache) {
-		            $this->_cache($all_params, $response);
-		        }
-              	return $body;
-            }
-            else if ($body->err) {
-                throw new VimeoAPIException($body->err->msg, $body->err->code);
-            }
-
-            return false;
+        if (empty($method))
+		{
+			return false;
         }
+ 
+        $body = $this->_splitResponse($response);
 
-        return $body;
+		if (!is_object($body) OR !isset($body->stat))
+		{
+            throw new VimeoAPIException('Response body is malformed.', 999);
+		}
+
+		if ($body->stat == 'ok')
+		{
+	        // Cache successful response
+	        if ($this->_cache_enabled && $cache)
+			{
+	            $this->_cache($all_params, $response);
+	        }
+ 
+          	return $body;
+        }
+        else if ($body->err)
+		{
+            throw new VimeoAPIException($body->err->msg, $body->err->code);
+        }
     }
 
     /**
