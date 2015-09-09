@@ -176,7 +176,7 @@ class phpVimeo
 		list($headers, $body) = explode($separator, $response, 2);
 		$this->_response_headers = self::_parseHttpHeaders($headers);
 		
-        return unserialize($body);
+        return @unserialize($body);
 	}
 
     /**
